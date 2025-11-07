@@ -1,22 +1,31 @@
-# TODO: Resolve Flutter Run Errors
+# TODO: Integrate Backend with Frontend
 
-## Step 1: Explain Errors
-- [x] Explain "Flutter failed to delete a directory" errors (file locks by processes like previous Flutter run, Chrome, VSCode).
-- [x] Explain "Failed to remove build/.dart_tool/ephemeral" (same file lock issue).
-- [x] Explain typos in commands ("futter" -> "flutter", "tecnhnoupi2" -> "technoupi2").
+## Step 1: Create API Service Classes
+- [ ] Create `lib/services/api_service.dart` for HTTP requests
+- [ ] Create `lib/services/auth_service.dart` for authentication
+- [ ] Add proper error handling and response parsing
 
-## Step 2: Provide Solutions
-- [x] Kill running processes (flutter, dart, chrome, etc.).
-- [x] Close VSCode and any editors.
-- [x] Manually delete locked directories if needed.
-- [x] Run flutter clean.
-- [x] Run flutter run again.
+## Step 2: Update Models
+- [ ] Update `lib/models/user.dart` to match backend User model
+- [ ] Update `lib/models/transaction.dart` to match backend Transaction model
+- [ ] Add fromJson/toJson methods for API integration
 
-## Step 3: Execute Resolution Commands
-- [ ] Kill processes using taskkill.
-- [ ] Attempt flutter clean.
-- [ ] If clean fails, manually delete directories.
-- [ ] Run flutter run.
+## Step 3: Update AuthProvider
+- [ ] Modify `lib/providers/auth_provider.dart` to use real API calls
+- [ ] Implement JWT token storage and management
+- [ ] Update login/logout logic
 
-## Step 4: Test Resolution
-- [ ] Verify flutter run works without errors.
+## Step 4: Update Screens
+- [ ] Update `login_screen.dart` to use real authentication
+- [ ] Update `home_screen.dart` to fetch real user data and transactions
+- [ ] Update `payment_screen.dart` to make real payments
+- [ ] Update `history_screen.dart` to show real transaction history
+
+## Step 5: Add Configuration
+- [ ] Create `lib/config/api_config.dart` for API endpoints
+- [ ] Add environment variables for backend URL
+
+## Step 6: Testing and Error Handling
+- [ ] Test all API integrations
+- [ ] Add proper loading states and error messages
+- [ ] Verify blockchain transactions work end-to-end

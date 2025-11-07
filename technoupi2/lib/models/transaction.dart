@@ -16,6 +16,45 @@ class Transaction {
     required this.type,
     required this.status,
   });
+
+  // Factory constructor to create Transaction from JSON
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    return Transaction(
+      id: json['_id'] ?? '',
+      name: json['recipient_name'] ?? json['sender_name'] ?? 'Unknown',
+      upiId: json['recipient_upi'] ?? json['sender_upi'] ?? '',
+      amount: (json['amount'] ?? 0.0).toDouble(),
+      dateTime: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'])
+          : DateTime.now(),
+      type: json['type'] == 'sent' ? TransactionType.sent : TransactionType.received,
+      status: _parseStatus(json['status'] ?? 'pending'),
+    );
+  }
+
+  // Convert Transaction to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'recipient_name': name,
+      'recipient_upi': upiId,
+      'amount': amount,
+      'timestamp': dateTime.toIso8601String(),
+      'type': type == TransactionType.sent ? 'sent' : 'received',
+      'status': status.toString().split('.').last,
+    };
+  }
+
+  static TransactionStatus _parseStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return TransactionStatus.success;
+      case 'failed':
+        return TransactionStatus.failed;
+      default:
+        return TransactionStatus.pending;
+    }
+  }
 }
 
 enum TransactionType {

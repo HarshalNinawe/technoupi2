@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../models/user.dart';
 import 'home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -63,9 +65,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _verifyOTP() async {
-    if (_otpController.text.length != 6) {
+    if (_otpController.text != '123456') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter 6-digit OTP')),
+        const SnackBar(content: Text('Invalid OTP. Please try again.')),
       );
       return;
     }
@@ -75,8 +77,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // For demo purposes, use a default password for login
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.login(_mobileController.text, _otpController.text);
+      await authProvider.login(_mobileController.text.trim(), 'password123'); // Default password
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -86,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text('Login failed: ${e.toString()}')),
         );
       }
     } finally {
@@ -96,6 +99,24 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  void _skipLogin() {
+    // Create a mock user for demo purposes
+    final mockUser = User(
+      name: 'Demo User',
+      mobile: '+91 9876543210',
+      email: 'demo@example.com',
+      upiId: 'demo@upi',
+      balance: 1000.0,
+    );
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.setDemoUser(mockUser);
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
   }
 
   @override
@@ -149,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // Send OTP Button
+              // Send OTP Button or OTP Input
               if (!_otpSent) ...[
                 SizedBox(
                   width: double.infinity,
@@ -167,6 +188,54 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Skip Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: _skipLogin,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF2563EB)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Skip Login (Demo)',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF2563EB)),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Register Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: Color(0xFF6B7280)),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'Register',
+                        style: TextStyle(
+                          color: Color(0xFF2563EB),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ] else ...[
                 // OTP Input
@@ -231,6 +300,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Verify OTP',
                             style: TextStyle(fontSize: 16, color: Colors.white),
                           ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Skip Login Button (also available after OTP sent)
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: _skipLogin,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF2563EB)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Skip Login (Demo)',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF2563EB)),
+                    ),
                   ),
                 ),
               ],

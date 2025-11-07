@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../services/transaction_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -11,6 +14,7 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _upiIdController = TextEditingController();
 
   // Mock contact data
   final List<Map<String, String>> _contacts = [
@@ -23,6 +27,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   List<Map<String, String>> _filteredContacts = [];
   String? _selectedContact;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -45,13 +50,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void _selectContact(Map<String, String> contact) {
     setState(() {
       _selectedContact = contact['upiId'];
+      _upiIdController.text = contact['upiId']!;
     });
   }
 
-  void _makePayment() {
-    if (_selectedContact == null) {
+  Future<void> _makePayment() async {
+    final recipientUpi = _selectedContact ?? _upiIdController.text.trim();
+    if (recipientUpi.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a contact')),
+        const SnackBar(content: Text('Please select a contact or enter UPI ID')),
       );
       return;
     }
@@ -64,16 +71,42 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
-    // Mock payment processing
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Payment of ₹${amount.toStringAsFixed(2)} initiated to $_selectedContact')),
-    );
-
-    // Reset form
     setState(() {
-      _selectedContact = null;
-      _amountController.clear();
+      _isLoading = true;
     });
+
+    try {
+      await TransactionService.sendMoney(recipientUpi: recipientUpi, amount: amount);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Payment of ₹${amount.toStringAsFixed(2)} successful to $recipientUpi')),
+        );
+
+        // Refresh balance
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        await authProvider.updateBalance();
+
+        // Reset form
+        setState(() {
+          _selectedContact = null;
+          _upiIdController.clear();
+          _amountController.clear();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Payment failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -158,6 +191,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fillColor: const Color(0xFFF9FAFB),
                   ),
                 ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Or Enter UPI ID',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _upiIdController,
+                  decoration: InputDecoration(
+                    hintText: 'recipient@upi',
+                    prefixIcon: const Icon(Icons.account_circle, color: Color(0xFF6B7280)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF9FAFB),
+                  ),
+                ),
               ],
             ),
           ),
@@ -170,17 +225,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: _makePayment,
+              onPressed: _isLoading ? null : _makePayment,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2563EB),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Pay',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Pay',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
             ),
           ),
 
@@ -250,6 +307,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void dispose() {
     _searchController.dispose();
     _amountController.dispose();
+    _upiIdController.dispose();
     super.dispose();
   }
 }

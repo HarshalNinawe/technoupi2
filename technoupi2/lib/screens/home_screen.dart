@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 import '../models/user.dart';
 import '../providers/auth_provider.dart';
+import '../services/transaction_service.dart';
 import 'payment_screen.dart';
 import 'bank_screen.dart';
 import 'history_screen.dart';
@@ -74,8 +75,39 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class HomeContent extends StatelessWidget {
+class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  List<Transaction> _recentTransactions = [];
+  bool _isLoadingTransactions = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentTransactions();
+  }
+
+  Future<void> _loadRecentTransactions() async {
+    try {
+      final transactions = await TransactionService.getTransactionHistory();
+      setState(() {
+        _recentTransactions = transactions.take(3).toList();
+        _isLoadingTransactions = false;
+      });
+    } catch (e) {
+      // Fallback to mock data if API fails
+      setState(() {
+        _recentTransactions = mockTransactions.take(3).toList();
+        _isLoadingTransactions = false;
+      });
+      // Removed print for production
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -327,7 +359,10 @@ class HomeContent extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ...mockTransactions.take(3).map((transaction) => _buildTransactionItem(transaction)),
+                  if (_isLoadingTransactions)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    ..._recentTransactions.map((transaction) => _buildTransactionItem(transaction)),
                 ],
               ),
             ),
